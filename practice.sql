@@ -948,23 +948,22 @@ WHERE dept_no IN (
      FROM xxdn_dept
      WHERE location = 'BLR'
      );
-     
+
 SELECT *
 FROM xxdn_emp
-WHERE dept_no NOT IN (
-     SELECT dept_no
-     FROM xxdn_dept
-     WHERE dept_no IS NOT NULL
-     );
-     
-SELECT emp_name
-FROM xxdn_emp e1 
+WHERE dept_no IS NULL;
+--OR
+SELECT *
+FROM xxdn_emp e
 WHERE NOT EXISTS (
      SELECT 1
-     FROM xxdn_emp e2
-     WHERE e1.dept_no = e2.dept_no
+     FROM xxdn_dept d
+     WHERE d.dept_no = e.dept_no
      );
-     
+
+--CORRELATED SUBQUERY - Subquery runs for each other
+--                    - row by row comparison
+
 SELECT e.emp_name, e.salary
 FROM xxdn_emp e
 WHERE salary > (
@@ -973,15 +972,584 @@ WHERE salary > (
      WHERE dept_no = e.dept_no
      );
      
-SELECT e.dept_no
+SELECT dept_no
 FROM xxdn_emp e
-WHERE salary > (
+GROUP BY dept_no
+HAVING salary > (
      SELECT MAX(salary)
      FROM xxdn_emp
      WHERE dept_no = e.dept_no);
+     
+SELECT dept_no
+FROM xxdn_emp
+GROUP BY dept_no
+HAVING SUM(salary) = (
+     SELECT MAX(Total_salary)
+     FROM
+     (
+        SELECT SUM(salary) AS Total_salary
+        FROM xxdn_emp
+        GROUP BY dept_no
+     )
+);
+     
+--=============================
+--19 Apr 2026
+--=============================
 
+--SET OPERATORS - Combine results of multiple SELECT queries
+--              - All SELECT Must match - Same no of columns
+--                                      - Same data types
+--                                      - Same order
+
+
+--UNION - Combines results and removes duplicates
+--      - Distinct Automatically
+
+SELECT emp_name FROM xxdn_emp
+UNION
+SELECT dept_name FROM xxdn_dept;
+
+
+SELECT dept_no FROM xxdn_emp
+UNION
+SELECT dept_no FROM xxdn_dept;
+
+--UNION ALL - Combines results with duplicates
+--          - Faster than UNION (bcz no duplicate check)
+
+SELECT dept_no FROM xxdn_emp
+UNION ALL
+SELECT dept_no FROM xxdn_dept;
+
+--INTERSECT - Returns common values
+--          - Only matching dept_no
+
+SELECT dept_no FROM xxdn_emp
+INTERSECT
+SELECT dept_no FROM xxdn_dept;
+
+--MINUS - Returns values in first query NOT present in second query
+--      - Dept no in emp but not in dept
+
+SELECT dept_no FROM xxdn_emp
+MINUS
+SELECT dept_no FROM xxdn_dept;
+
+-- Order By in SET Operations
+--       Rule - Only one Order By at the -> END
+
+SELECT dept_no FROM xxdn_emp
+UNION
+SELECT dept_no FROM xxdn_dept
+ORDER BY dept_no;
+
+--Column Naming Rule
+
+SELECT dept_no AS d FROM xxdn_emp
+UNION
+SELECT dept_no FROM xxdn_dept;
+
+--practice problems
+
+SELECT dept_no FROM xxdn_emp
+UNION
+SELECT dept_no FROM xxdn_dept;
+
+SELECT dept_no FROM xxdn_emp
+UNION ALL
+SELECT dept_no FROM xxdn_dept;
+
+SELECT dept_no FROM xxdn_emp
+INTERSECT
+SELECT dept_no FROM xxdn_dept;
+
+SELECT dept_no FROM xxdn_emp
+MINUS
+SELECT dept_no FROM xxdn_dept;
+
+SELECT emp_name as name FROM xxdn_emp
+UNION
+SELECT dept_name FROM xxdn_dept;
+
+SELECT emp_name FROM xxdn_emp
+UNION ALL
+SELECT emp_name FROM xxdn_emp
+ORDER BY emp_name;
+
+-- Rules to remember in SET OPERATORS
+
+--1) Column matching - Same count + same data type + same order
+--2) ORDER BY        - Only at the end
+--3) UNION VS UNION ALL - UNION - Unique
+--                      - UNION ALL - Faster
+
+
+
+--DML - Data Manipulation Language
+
+--1)Multitable Insert :-
+--   - Definition: Insert into multiple tables using ONE query
+--   - Types :-
+--            1)Unconditional - Insert into all tables
+--            2)Conditional - Insert based on condition
+
+--1)Unconditional Insert :-
+
+INSERT ALL
+    INTO xxdn_dept VALUES (60, 'SUPPORT', 'DELHI')
+    INTO xxdn_dept VALUES (70, 'HR2', 'MUMBAI')
+SELECT * FROM dual;   -- just triggers insert
+
+
+INSERT ALL
+     INTO xxdn_emp VALUES (8,'ROMAN','MANAGER',2000,20,4)
+     INTO xxdn_dept VALUES (80,'HR3','SOLAPUR')
+SELECT * FROM dual;
+
+--2)Conditional Insert :- Rows split based on condition
+
+CREATE TABLE high_salary (
+   emp_id NUMBER,
+   emp_name VARCHAR2(50),
+   salary NUMBER
+   );
+   
+CREATE TABLE low_salary (
+   emp_id NUMBER,
+   emp_name VARCHAR2(50),
+   salary NUMBER
+   );
+   
+   
+INSERT ALL
+   WHEN salary > 7000 THEN
+     INTO high_salary VALUES(emp_id, emp_name, salary)
+   WHEN salary <= 7000 THEN
+     INTO low_salary VALUES(emp_id,emp_name,salary)
+SELECT emp_id, emp_name, salary
+FROM xxdn_emp;
+
+SELECT * FROM high_salary;
+SELECT * FROM low_salary;
+
+--practice problems
+
+INSERT ALL
+      INTO xxdn_emp VALUES (9,'SETH','SALESMAN',1000,30,5)
+      INTO xxdn_dept VALUES(90,'SALES','MADRAS')
+SELECT * FROM dual;
+
+INSERT ALL 
+    WHEN salary > 7000 THEN 
+      INTO high_salary VALUES (emp_id, emp_name,salary)
+    WHEN salary <=7000 THEN 
+      INTO low_salary VALUES (emp_id,emp_name, salary)
+SELECT emp_id,emp_name, salary 
+FROM xxdn_emp;
+
+
+--MERGE - Combine Insert + Update = Upsert in one statement
+--      - Update if exists, else insert
+
+MERGE INTO xxdn_emp t
+USING (
+    SELECT 1 emp_id, 'NEW_EMP' emp_name, 5000 salary, 10 dept_no FROM dual
+    ) s 
+    ON (t.emp_id = s.emp_id)
+    
+    WHEN MATCHED THEN 
+       UPDATE SET t.salary = s.salary
+       
+    WHEN NOT MATCHED THEN 
+       INSERT (emp_id, emp_name, salary, dept_no)
+       VALUES (s.emp_id, s.emp_name, s.salary, s.dept_no);
+
+--practice problem
+
+MERGE INTO xxdn_emp t
+USING (
+       SELECT 1 emp_id, 'NEW_EMP' emp_name, 5000 salary, 10 dept_no FROM dual)
+       s
+       ON (t.emp_id = s.emp_id)
+       WHEN MATCHED THEN 
+         UPDATE SET t.salary = s.salary 
+         
+        WHEN NOT MATCHED THEN
+           INSERT (emp_id, emp_name, salary, dept_no)
+           VALUES (s.emp_id, s.emp_name, s.salary, s.dept_no);
+
+--FLASHBACK (ADVANCED) - View past data (time travel)
+--                     - Purpose - recover deleted data
+--                     - Audit history
+
+--          Types :-
+--            1)Flashback Query - see old data
+--            2)Flashback Table - restore table
+
+
+SELECT *
+FROM xxdn_emp
+AS OF TIMESTAMP (SYSTIMESTAMP - INTERVAL '5' MINUTE);
+
+-- Shows table 5 min ago
+-- FLASHBACK TABLE needs permission to change row positions (ROWIDs)
+-- That permission is called row movement
+
+ALTER TABLE xxdn_emp ENABLE ROW MOVEMENT;
+
+FLASHBACK TABLE xxdn_emp TO TIMESTAMP
+(SYSTIMESTAMP - INTERVAL '5' MINUTE);
+
+--practice problems 
+
+SELECT * 
+FROM xxdn_emp
+AS OF TIMESTAMP (SYSTIMESTAMP - INTERVAL '5' MINUTE );
+
+--TRACKING CHANHGES - Track changes in data over time
+--                  - Purpose - Auditing
+--                            - Data History
+--                            - Debugging
+
+--     Methods:-
+
+--1)Using TIMESTAMP COLUMN
+
+ALTER TABLE xxdn_emp
+ADD last_updated TIMESTAMP;
+
+UPDATE xxdn_emp
+SET last_updated = SYSTIMESTAMP;
+
+--2)Using TRIGGERS (ADVANCED) - Automatically Tracks Updates
+
+CREATE OR REPLACE TRIGGER emp_update_trg
+BEFORE UPDATE ON xxdn_emp
+FOR EACH ROW
+BEGIN
+  :NEW.last_updated := SYSTIMESTAMP;
+END;
+
+--practice problems
+
+SELECT *
+FROM xxdn_emp
+AS OF TIMESTAMP (SYSTIMESTAMP - INTERVAL '10' MINUTE);
+
+
+CREATE OR REPLACE TRIGGER emp_update_trg
+BEFORE UPDATE ON xxdn_emp
+FOR EACH ROW
+BEGIN
+    :NEW.last_updated := SYSTIMESTAMP;
+END;
+
+--Pseudo column = temporary, system-generated column used in queries
+--Examples:-
+--ROWNUM
+--SYSDATE
+--ROWID
+
+SELECT emp_name, ROWNUM
+FROM xxdn_emp;
+
+--ROWNUM is not in table → still works
+
+ALTER TABLE xxdn_emp ENABLE ROW MOVEMENT;
+
+ALTER TABLE xxdn_emp
+ADD last_updated TIMESTAMP;
+
+
+--DDL - Data Defintion Language
+--    - Logical structure stored in database
+--    - Purpose - Organize and store data
+--   🔥 COMMON OBJECTS
+--      [Object]	    [Use]
+--      Table	    store data
+--      View	    virtual table
+--      Index	    fast access
+--      Sequence	auto numbers
+
+
+--CREATE TABLE - Define structure before storing data
+
+CREATE TABLE xxdn_student (
+     id NUMBER PRIMARY KEY,
+     name VARCHAR2(50),
+     marks NUMBER(5,2)
+);
+
+CREATE TABLE xxdn_employee_test(
+     emp_id NUMBER PRIMARY KEY,
+     emp_name VARCHAR2(50),
+     salary NUMBER
+);
+
+--Data types - Defines type of data column stores
+--           - Control what data can be stored
+
+--🔥 COMMON TYPES
+--  [Type]	[Use]
+--   NUMBER	    numeric
+--   VARCHAR2	text
+--   DATE	    date
+--   TIMESTAMP	date + time
+
+
+CREATE TABLE xxdn_sample(
+    id NUMBER,
+    name VARCHAR2(50),
+    created_date DATE
+);
+
+
+--Constraints - Rules applied on columns
+--            - Purpose - Ensure data integrity
+
+--🔥 TYPES
+--   [Constraint]	[Meaning]
+--   PRIMARY KEY	unique + not null
+--   NOT NULL	    cannot be empty
+--   UNIQUE	        no duplicates
+--   FOREIGN KEY	reference another table
+--   CHECK	        condition
+
+CREATE TABLE xxdn_dept_test(
+     dept_no NUMBER PRIMARY KEY,
+     dept_name VARCHAR2(50) NOT NULL
+);
+
+--FORIEGN KEY
+
+CREATE TABLE xxdn_emp_test(
+    emp_id NUMBER PRIMARY KEY,
+    dept_no NUMBER,
+    CONSTRAINT fk_xxdn_dept_test
+    FOREIGN KEY (dept_no)
+    REFERENCES xxdn_dept_test(dept_no)
+);
+
+--You can only insert dept_no in emp_test
+--if that dept_no already exists in dept_test
+
+--CREATE TABLE USING SUBQUERY (CTAS)
+--     create table from existing data
+--     Purpose - Copy structure + data quickly
+
+CREATE TABLE xxdn_emp_copy AS
+SELECT * FROM xxdn_emp;
+
+--SELECT *    - copies data
+--WHERE 1=0   - copies structure only
+
+CREATE TABLE xxdn_emp_empty AS
+SELECT * FROM xxdn_emp WHERE 1=0;
+
+SELECT * FROM xxdn_emp_copy;
+SELECT * FROM xxdn_emp_empty;
+
+
+--ALTER TABLE - Modify existing table
+--       Purpose - Add/change/delete columns
+
+--ADD COLUMN
+-- no changes in existing ones
+ALTER TABLE xxdn_emp
+ADD email VARCHAR2(100);
+
+--MODIFY COLUMN - chnage in columns properties like - data type, constraints, size
+-- may affect existing data
+ALTER TABLE xxdn_emp
+MODIFY emp_name VARCHAR2(100);
+
+--DROP COLUMN
+ALTER TABLE xxdn_emp
+DROP COLUMN email;
+
+--DROP TABLE - Deletes table completely
+--           - Data is lost permanently
+
+DROP TABLE xxdn_emp_empty;
+
+--practice problems
+
+CREATE TABLE dept_demo(
+    dept_no NUMBER PRIMARY KEY,
+    dept_name VARCHAR2(50) NOT NULL
+);
+
+
+CREATE TABLE emp_demo(
+    emp_id NUMBER PRIMARY KEY,
+    emp_name VARCHAR2(50),
+    dept_no NUMBER
+    CONSTRAINT fk_dept_demo
+    FOREIGN KEY dept_no,
+    REFERENCES dept_demo(dept_no)
+    );
+
+DESC xxdn_emp;
+DESC xxdn_dept;
 SELECT * FROM sal_grade;
 SELECT * FROM xxdn_emp;
 SELECT * FROM xxdn_dept;
 
 COMMIT;
+
+
+
+
+
+--====================
+-- SQL Practice 
+--====================
+
+--SELECT emp_name, salary
+--FROM emp;
+--
+--SELECT emp_name, salary, salary*1.10 as incremented_salary 
+--FROM emp;
+--
+--SELECT DISTINCT dept_no
+--FROM emp;
+--
+--SELECT *
+--FROM emp
+--WHERE salary > 3000;
+--
+--SELECT *
+--FROM emp
+--ORDER BY salary DESC;
+--
+--SELECT *
+--FROM emp
+--ORDER BY salary DESC
+--FETCH FIRST 5 ROWS ONLY;
+--
+--SELECT UPPER(emp_name) AS Capital_Name
+--FROM emp;
+--
+--SELECT ROUND(salary, -2)
+--FROM emp;
+--
+--SELECT MONTHS_BETWEEN(date1, date2)
+--FROM dual;
+----EX: SELECT MONTHS_BETWEEN(SYSDATE, DATE '2025-04-19')
+----    FROM dual;
+--
+--SELECT TO_CHAR(SYSDATE, 'DD-MM-YYYY')
+--FROM dual;
+--
+--SELECT NVL(salary,0)
+--FROM emp;
+--
+--SELECT emp_name,
+--CASE
+--    WHEN salary > 7000 THEN 'High_salary'
+--    WHEN salary <=7000 AND salary > 4000 THEN 'Mid-level_salary'
+--    ELSE 'Low_salary'
+--END
+--FROM emp;
+--
+--
+--SELECT AVG(salary) AS Average_salary
+--FROM emp;
+--
+--SELECT dept_no, SUM(salary)
+--FROM emp
+--GROUP BY dept_no;
+--
+--SELECT dept_no
+--FROM emp
+--GROUP BY dept_no
+--HAVING AVG(salary) > 2000;
+--
+--SELECT e.emp_name, d.dept_name
+--FROM emp e
+--INNER JOIN dept d
+--ON e.dept_no = d.dept_no;
+--
+--SELECT e.emp_name, d.dept_name
+--FROM emp e
+--LEFT JOIN dept d
+--ON e.dept_no = d.dept_no;
+--
+--SELECT e.emp_name, m.emp_name AS manager
+--FROM emp e
+--JOIN emp m
+--ON e.manager_id = m.emp_id;
+--
+--SELECT emp_name
+--FROM emp
+--WHERE salary >(
+--     SELECT AVG(salary)
+--     FROM emp
+--);
+--
+--SELECT *
+--FROM emp
+--WHERE dept_no IN (
+--     SELECT dept_no
+--     FROM emp
+--     WHERE emp_name = 'KING'
+--     );
+--     
+--SELECT dept_no as dept FROM emp 
+--UNION
+--SELECT dept_no FROM dept;
+--
+--SELECT dept_no as dept FROM emp
+--INTERSECT
+--SELECT dept_no FROM dept;
+--
+--INSERT INTO emp (emp_id, emp_name, salary, dept_no)
+--VALUES (1, 'John', 5000, 10);
+--
+--UPDATE emp
+--SET salary = salary*1.20
+--WHERE dept_no = 10;
+--
+--DELETE FROM emp
+--WHERE emp_id = 1;
+--
+--CREATE TABLE emp (
+--  emp_id NUMBER,
+--  emp_name VARCHAR2(50),
+--  salary NUMBER,
+--  dept_no NUMBER
+--  );
+--  
+--ALTER TABLE emp
+--ADD age NUMBER;
+--
+--
+--DROP TABLE emp;
+--
+--CREATE VIEW emp_view AS
+--SELECT emp_name, salary FROM emp;
+--
+--CREATE SEQUENCE emp_seq
+--START WITH 1 INCREMENT BY 1;
+--
+--CREATE INDEX idx_emp_name
+--ON emp(emp_name);
+--
+--SELECT emp_name
+--FROM emp e1
+--WHERE salary > (
+--   SELECT AVG(salary)
+--   FROM emp e2
+--   WHERE e1.dept_no = e2.dept_no
+--);
+--
+--GRANT SELECT ON emp TO user1;
+--
+--REVOKE SELECT ON emp FROM user1;
+--
+--SELECT SYSTIMESTAMP FROM dual;
+
+
+
+
