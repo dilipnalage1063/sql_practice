@@ -854,7 +854,131 @@ WHERE NOT EXISTS(
      WHERE d.dept_no = e.dept_no
      );
 
+--===============================
+--17 Apr 2026
+--===============================
 
+SELECT *
+FROM xxdn_emp
+WHERE dept_no IN (
+      SELECT dept_no
+      FROM xxdn_dept
+      WHERE location = 'BLR'
+      );
+
+--NULL HANDLING IN SUBQUERIES
+SELECT emp_name
+FROM xxdn_emp
+WHERE dept_no NOT IN (
+     SELECT dept_no FROM xxdn_emp
+     );
+     
+SELECT emp_name
+FROM xxdn_emp e1 
+WHERE NOT EXISTS (
+     SELECT 1
+     FROM xxdn_emp e2
+     WHERE e1.dept_no = e2.dept_no
+     );
+     
+--Exists (use case) - to check if related data is present in another table
+
+SELECT *
+FROM customers c
+WHERE EXISTS (
+     SELECT 1
+     FROM orders o
+     WHERE o.customer_id = c.customer_id)
+     ;
+   
+-- NOT EXISTS - For inactive users, unused account, pending actions     
+SELECT *
+FROM customers c
+WHERE NOT EXISTS (
+    SELECT 1
+    FROM orders o
+    WHERE o.customer_id = c.customer_id
+); 
+     
+-- NOT IN vs NOT EXISTS   => USE NOT EXISTS
+--  NOT IN - checks values - if NULL -> UNKNOWN
+--  NOT EXISTS - checks rows - doesn't compare with NULL directly
+
+--IN - works fine with NULL
+--NOT IN - breaks if NULL present
+
+-- IF STILL WANT TO USE - NOT IN -> REMOVE NULLS
+
+
+SELECT emp_name
+FROM xxdn_emp
+WHERE dept_no NOT IN (
+     SELECT dept_no
+     FROM xxdn_emp
+     WHERE dept_no IS NOT NULL
+     );
+     
+SELECT e.emp_name, e.salary
+FROM xxdn_emp e
+WHERE salary > (
+     SELECT AVG(salary)
+     FROM xxdn_emp
+     WHERE dept_no = e.dept_no) --Compare employee salary with their own department average, not whole company.
+     ;
+
+--practice problems
+
+SELECT *
+FROM xxdn_emp
+WHERE salary = (
+     SELECT MAX(salary)
+     FROM xxdn_emp);
+     
+SELECT *
+FROM xxdn_emp
+WHERE salary > (
+      SELECT AVG(salary)
+      FROM xxdn_emp
+      );
+      
+SELECT *
+FROM xxdn_emp
+WHERE dept_no IN (
+     SELECT dept_no
+     FROM xxdn_dept
+     WHERE location = 'BLR'
+     );
+     
+SELECT *
+FROM xxdn_emp
+WHERE dept_no NOT IN (
+     SELECT dept_no
+     FROM xxdn_dept
+     WHERE dept_no IS NOT NULL
+     );
+     
+SELECT emp_name
+FROM xxdn_emp e1 
+WHERE NOT EXISTS (
+     SELECT 1
+     FROM xxdn_emp e2
+     WHERE e1.dept_no = e2.dept_no
+     );
+     
+SELECT e.emp_name, e.salary
+FROM xxdn_emp e
+WHERE salary > (
+     SELECT AVG(salary)
+     FROM xxdn_emp
+     WHERE dept_no = e.dept_no
+     );
+     
+SELECT e.dept_no
+FROM xxdn_emp e
+WHERE salary > (
+     SELECT MAX(salary)
+     FROM xxdn_emp
+     WHERE dept_no = e.dept_no);
 
 SELECT * FROM sal_grade;
 SELECT * FROM xxdn_emp;
