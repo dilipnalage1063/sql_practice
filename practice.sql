@@ -1263,6 +1263,7 @@ ADD last_updated TIMESTAMP;
 
 
 --DDL - Data Defintion Language
+--    - Auto Commits (No Rollback)
 --    - Logical structure stored in database
 --    - Purpose - Organize and store data
 --   🔥 COMMON OBJECTS
@@ -1337,6 +1338,9 @@ CREATE TABLE xxdn_emp_test(
 --CREATE TABLE USING SUBQUERY (CTAS)
 --     create table from existing data
 --     Purpose - Copy structure + data quickly
+--     IMP NOTE : Constraints are not copied
+--                Only structure and data is copied
+
 
 CREATE TABLE xxdn_emp_copy AS
 SELECT * FROM xxdn_emp;
@@ -1353,6 +1357,7 @@ SELECT * FROM xxdn_emp_empty;
 
 --ALTER TABLE - Modify existing table
 --       Purpose - Add/change/delete columns
+--       Heavily used in real projects
 
 --ADD COLUMN
 -- no changes in existing ones
@@ -1370,25 +1375,43 @@ DROP COLUMN email;
 
 --DROP TABLE - Deletes table completely
 --           - Data is lost permanently
+--           - irreversible
 
 DROP TABLE xxdn_emp_empty;
 
 --practice problems
 
-CREATE TABLE dept_demo(
+CREATE TABLE xxdn_dept_demo(
     dept_no NUMBER PRIMARY KEY,
     dept_name VARCHAR2(50) NOT NULL
 );
 
 
-CREATE TABLE emp_demo(
+CREATE TABLE xxdn_emp_demo(
     emp_id NUMBER PRIMARY KEY,
     emp_name VARCHAR2(50),
-    dept_no NUMBER
+    dept_no NUMBER,
     CONSTRAINT fk_dept_demo
-    FOREIGN KEY dept_no,
-    REFERENCES dept_demo(dept_no)
+    FOREIGN KEY (dept_no)
+    REFERENCES xxdn_dept_demo(dept_no)
     );
+    
+CREATE TABLE xxdn_emp_demo_copy AS
+SELECT * FROM xxdn_emp_demo;
+
+CREATE TABLE xxdn_emp_demo_struct AS
+SELECT * FROM xxdn_emp WHERE 1=0;
+
+ALTER TABLE xxdn_emp_demo 
+ADD  email VARCHAR2(50);
+
+ALTER TABLE xxdn_emp_demo
+MODIFY emp_name VARCHAR2(200);
+
+ALTER TABLE xxdn_emp_demo
+DROP COLUMN email;
+
+DROP TABLE xxdn_emp_demo;
 
 DESC xxdn_emp;
 DESC xxdn_dept;
@@ -1399,6 +1422,602 @@ SELECT * FROM xxdn_dept;
 COMMIT;
 
 
+--================================
+-- 20 Apr 2026
+--================================
+
+--DATA DICTIONARY - Metadata about database
+--        Answers: - what tables exist
+--                   what columns are in table
+--                   what constraints are applied
+--                   who own what
+
+--       Table - stores data
+--       Data Dictionary - stores info about tables
+
+
+--View	        Meaning
+--USER_TABLES	your tables
+--ALL_TABLES	accessible tables
+--DBA_TABLES	all tables (admin only)
+
+
+--Using Data Dictionary Views :
+--List All Tables
+
+SELECT table_name
+FROM user_tables;
+
+SELECT column_name, data_type
+FROM user_tab_columns
+WHERE table_name = 'XXDN_EMP';
+--Table name must be in UPPERCASE
+
+SELECT constraint_name, constraint_type
+FROM user_constraints
+WHERE table_name = 'XXDN_EMP';
+
+--** constraint_type
+--Code	Meaning
+--P	    Primary key
+--R	    Foreign key
+--U	    Unique
+--C	    Check
+
+SELECT object_name, object_type
+FROM user_objects;
+
+SELECT column_name, constraint_name
+FROM user_cons_columns
+WHERE table_name = 'XXDN_EMP';
+
+
+--Common Queries
+
+--1] List all tables
+SELECT table_name FROM user_tables;
+
+--2. Describe table (alternative to DESC)
+SELECT column_name, data_type, nullable
+FROM user_tab_columns
+WHERE table_name ='XXDN_EMP';
+
+--3. Find primary key
+SELECT constraint_name
+FROM user_constraints
+WHERE table_name = 'XXDN_EMP'
+AND constraint_type = 'P';
+
+--4. Find foreign key
+SELECT constraint_name
+FROM user_constraints
+WHERE table_name = 'XXDN_EMP'
+AND constraint_type = 'R';
+
+--5. Find columns under constraint
+SELECT column_name
+FROM user_cons_columns
+WHERE constraint_name = 'FK_DEPT';
+
+SELECT * FROM user_tables;
+
+SELECT * FROM user_tab_columns;
+
+SELECT DISTINCT table_name
+FROM user_tab_columns
+WHERE table_name = 'XXDN_EMP';
+
+SELECT *
+FROM user_tab_columns
+WHERE table_name = 'XXDN_EMP';
+
+--practice problems
+
+SELECT table_name FROM user_tables;
+
+SELECT column_name
+FROM user_tab_columns
+WHERE table_name = 'XXDN_EMP';
+
+SELECT constraint_name
+FROM user_constraints
+WHERE table_name = 'XXDN_EMP'
+AND constraint_type = 'P';
+
+SELECT constraint_name
+FROM user_constraints
+WHERE table_name = 'XXDN_EMP'
+AND constraint_type = 'R';
+
+SELECT column_name
+FROM user_cons_columns
+WHERE constraint_name = 'FK_DEPT';
+
+--VIEW (in data dictionary)
+--   means saved SQL query
+--   Table = stores data
+--   View = shows data (no storage)
+
+
+CREATE VIEW xxdn_emp_view AS 
+SELECT emp_name, salary
+FROM xxdn_emp;
+
+--Joining views after creation of 2 views
+
+CREATE VIEW xxdn_emp_v AS
+SELECT emp_id, emp_name, dept_no FROM xxdn_emp;
+
+CREATE VIEW xxdn_dept_v AS 
+SELECT dept_no, dept_name FROM xxdn_dept;
+
+SELECT e.emp_name, d.dept_name
+FROM xxdn_emp_v e
+JOIN xxdn_dept_v d
+ON e.dept_no = d.dept_no;
+
+--practice problems
+
+CREATE VIEW xxdn_e AS
+SELECT emp_name, salary FROM xxdn_emp;
+
+CREATE VIEW xxdn_d AS
+SELECT dept_name FROM xxdn_dept;
+
+CREATE OR REPLACE VIEW xxdn_d AS
+SELECT dept_name, dept_no
+FROM xxdn_dept;
+
+CREATE OR REPLACE VIEW xxdn_e AS
+SELECT emp_name, salary, dept_no
+FROM xxdn_emp;
+
+SELECT e.emp_name, d.dept_name
+FROM xxdn_e e
+JOIN xxdn_d d
+ON e.dept_no = d.dept_no;
+
+--Sequences : auto-number generator      
+--         Purpose: Generate unique values (mostly for primary keys)
+
+--Instead of manually writing emp_id = 1,2,3...
+--→ database generates automatically
+
+CREATE TABLE xxdn_empl(
+     emp_id NUMBER PRIMARY KEY,
+     emp_name VARCHAR2(50),
+     salary NUMBER
+     );
+     
+CREATE SEQUENCE xxdn_empl_seq
+START WITH 1
+INCREMENT BY 1;
+
+INSERT INTO xxdn_empl(emp_id, emp_name, salary)
+VALUES (xxdn_empl_seq.NEXTVAL, 'MANISH',6600);
+
+--INSERT INTO xxdn_empl(emp_id, emp_name, salary)
+--VALUES (xxdn_empl_seq.CURRVAL, 'RAM', 5000);
+
+SELECT xxdn_empl.seq.CURRVAL FROM dual;
+
+DESC xxdn_empl;
+SELECT * FROM xxdn_empl;
+
+
+CREATE TABLE xxdn_employee(
+     emp_id NUMBER PRIMARY KEY,
+     emp_name VARCHAR2(50),
+     salary NUMBER
+     );
+
+
+CREATE SEQUENCE xxdn_employee_seq
+START WITH 2
+INCREMENT BY 1;
+
+INSERT INTO xxdn_employee(emp_id, emp_name, salary)
+VALUES (xxdn_employee_seq.NEXTVAL, 'RAM',5000);
+
+INSERT INTO xxdn_employee(emp_id, emp_name, salary)
+VALUES (xxdn_employee_seq.NEXTVAL, 'SHYAM', 10000);
+
+INSERT INTO xxdn_employee (emp_id, emp_name, salary)
+VALUES (xxdn_employee_seq.NEXTVAL, 'VIRAT', 3000);
+
+UPDATE xxdn_employee
+SET emp_id = 1
+WHERE emp_name = 'RAM';
+
+SELECT * FROM xxdn_employee;
+
+SELECT xxdn_employee_seq.CURRVAL FROM dual;
+
+
+--SYNONYMS - shortcut name for a table/object
+--           alias for tables
+-- Purpose : Avoid writing long names
+--Object = any database component you create to store or manage data
+
+SELECT * FROM xxdn_employee;
+
+CREATE SYNONYM em FOR xxdn_employee;
+
+SELECT * FROM em;
+
+     --Types : 1) Private   - only you
+     --        2) Public    - everyone
+     
+-- INDEX - structure that makes search faster
+--        Purpose : Improve query performance
+
+-- 🔥 Real Thinking
+--Without index → full table scan  
+--With index → direct search
+
+
+CREATE INDEX xxdn_emp_name_idx
+ON xxdn_emp(emp_name);
+
+SELECT *
+FROM xxdn_emp
+WHERE emp_name = 'KING';
+
+-- Faster if index exists
+
+--IMPORTANT : 
+-- WHERE condition - Use index
+-- JOIN condition  - Use index
+
+--IMP : Dont over use : too many indexes - slows insert/update
+
+--Indexes are speed booster for queries
+
+--practice problems
+
+CREATE TABLE xxdn(
+  emp_id NUMBER,
+  emp_name VARCHAR2(50)
+  );
+
+CREATE SEQUENCE xxdn_seq
+START WITH 1
+INCREMENT BY 1;
+
+BEGIN
+    INSERT INTO xxdn (emp_id, emp_name)
+    VALUES (xxdn_seq.NEXTVAL,'A');
+    INSERT INTO xxdn (emp_id, emp_name)
+    VALUES (xxdn_seq.NEXTVAL,'B');
+END;
+/COMMIT;
+-- SIMPLE SQL way
+INSERT INTO xxdn VALUES (xxdn_seq.NEXTVAL, 'A');
+INSERT INTO xxdn VALUES (xxdn_seq.NEXTVAL, 'B');
+
+CREATE SYNONYM x FOR xxdn;
+
+SELECT * FROM x;
+
+CREATE INDEX emp_name_idx
+ON xxdn(emp_name);
+
+--SELECT * FROM dual;
+--
+--SELECT * FROM xxdn;
+--
+--TRUNCATE TABLE xxdn;
+--
+--DROP SEQUENCE xxdn_seq;
+
+
+-- CREATING VIEWS - SAVED SELECT QUERY
+
+CREATE VIEW emp_view AS 
+SELECT emp_id, emp_name
+FROM xxdn;
+
+SELECT * FROM xxdn_student;
+
+CREATE SEQUENCE xxdn_student_seq
+START WITH 1
+INCREMENT BY 1;
+
+DESC xxdn_student;
+
+INSERT INTO xxdn_student VALUES (xxdn_student_seq.NEXTVAL,'X',50);
+INSERT INTO xxdn_student VALUES (xxdn_student_seq.NEXTVAL,'Y',30);
+
+CREATE SYNONYM st FOR xxdn_student;
+
+SELECT * FROM st;
+
+CREATE VIEW st_view AS
+SELECT name, marks
+FROM st;
+
+SELECT * FROM st_view;
+
+-- TYPES OF VIEWS :
+--   1)SIMPLE VIEW - based on 1 table
+--   2)COMPLEX VIEW - uses joins/functions
+
+--MODIFY VIEW
+
+--CREATE OR REPLACE VIEW view_name AS ....
+
+--DROP VIEW 
+
+DROP VIEW st_view;
+
+-- MANAGING SCHEMA OBJECTS
+-- Constraints - rules on table columns
+--      purpose - to ensure correct and valid data to enter into database
+
+--ADD/REMOVE/ENABLE/DISABLE constraints
+
+ALTER TABLE xxdn_emp
+ADD CONSTRAINT pk_emp PRIMARY KEY (emp_id);
+
+DESC xxdn_student;
+
+SELECT constraint_name
+FROM user_constraints
+WHERE table_name = 'XXDN_STUDENT'
+AND constraint_type = 'P';
+
+--ADD CONSTRAINT
+
+ALTER TABLE xxdn_student
+ADD CONSTRAINT pk_st PRIMARY KEY (id);
+
+--IF ALREADY EXISTS - RENAME CONSTRAINT
+ALTER TABLE xxdn_student
+RENAME CONSTRAINT SYS_C00353697 TO pk_st;
+
+--DROP CONSTRAINT
+
+ALTER TABLE xxdn_student
+DROP CONSTRAINT pk_st;
+
+--DISABLE CONSTRAINT
+-- Allows invalid data temporarily
+ALTER TABLE xxdn_student
+DISABLE CONSTRAINT fk_dept;
+
+--ENABLE constraint
+ALTER TABLE xxdn_emp
+ENABLE CONSTRAINT fkr_dept;
+
+-- TEMPORARY TABLES : data exists only for session or transaction
+
+CREATE GLOBAL TEMPORARY TABLE temp_emp(
+   emp_id NUMBER,
+   emp_name VARCHAR2(50)
+   )
+   ON COMMIT DELETE ROWS;
+   
+-- Insert data - visinle only to you
+-- Other users - cannot see
+
+INSERT INTO temp_emp VALUES (1,'TEMP');
+
+SELECT * FROM temp_emp;
+
+COMMIT;
+
+--Temporary table = short-term storage
+
+
+--EXTERNAL TABLES :table that reads data from file (CSV, text)
+--            Data is NOT inside database  
+--            It is outside (file)
+
+--CREATE TABLE ext_emp (
+--  emp_id NUMBER,
+--  emp_name VARCHAR2(50)
+--)
+--ORGANIZATION EXTERNAL
+--(
+--  TYPE ORACLE_LOADER
+--  DEFAULT DIRECTORY my_dir
+--  ACCESS PARAMETERS (...)
+--  LOCATION ('emp.csv')
+--);
+
+
+--External table = file treated as table
+
+SELECT * FROM xxdn;
+
+--practice problems
+
+ALTER TABLE xxdn
+ADD CONSTRAINT pk_emp PRIMARY KEY (emp_id);
+
+CREATE GLOBAL TEMPORARY TABLE temp_emp(
+ emp_id NUMBER,
+ emp_name VARCHAR2(50)
+ )
+ ON COMMIT DELETE ROWS;
+ 
+ SELECT constraint_name
+ FROM user_constraints
+ WHERE table_name = 'XXDN';
+ 
+ SELECT * FROM user_constraints;
+ 
+ ALTER TABLE xxdn
+ DISABLE CONSTRAINT fk_dept;
+ 
+ --External Table - Fetch data from out side sources like csv or text file 
+ --                 not from the database
+
+
+--SUBQUERY AS A SOURCE
+--             Use Subquery like a table
+--         Purpose : when you need intermediate result
+
+SELECT *
+FROM (
+     SELECT emp_name, salary
+     FROM xxdn_emp
+     WHERE salary > 5000
+     )temp;
+
+
+--MULTIPLE-COLUMN SUBQUERY
+--   Means : Subquery returns more than one column
+-- Purpose : Compare multiple columns together
+
+SELECT *
+FROM xxdn_emp
+WHERE (dept_no, salary) IN (
+      SELECT dept_no, MAX(salary)
+      FROM xxdn_emp
+      GROUP BY dept_no
+      );
+      
+      --means : get highest salary employee in each dept
+
+
+--SCALAR SUBQUERY
+-- Means : Subquery returns one value, used inside SELECT
+-- Purpose : Add extra column dynamically
+
+SELECT emp_name, salary, (
+    SELECT AVG(salary) FROM xxdn_emp) AS avg_salary
+FROM xxdn_emp;
+
+-- Meaning
+-- Shows:
+--employee salary
+--overall avg salary
+
+--CORRELATED SUBQUERY
+-- Means : Subquery runs for each row
+-- Purpose : Row-by-row comparison
+
+SELECT emp_name, salary
+FROM xxdn_emp e
+WHERE salary > (
+     SELECT AVG(salary)
+     FROM xxdn_emp
+     WHERE dept_no = e.dept_no
+     );
+     
+--    Means 
+--    Employee > their dept average
+
+
+--WITH CLAUSE (VERY IMPORTANT)
+
+-- Defn: create temporary named subquery
+-- Purpose : Make query readable + reusable
+
+WITH high_sal AS (
+    SELECT * FROM xxdn_emp WHERE salary > 5000
+    )
+    SELECT * FROM high_sal;
+    
+WITH dept_avg AS (
+   SELECT dept_no, AVG(salary) avg_sal
+   FROM xxdn_emp
+   GROUP BY dept_no
+   )
+   SELECT e.emp_name, e.salary
+   FROM xxdn_emp e
+   JOIN dept_avg d 
+   ON e.dept_no = d.dept_no
+   WHERE e.salary > d.avg_sal;
+
+--WITH = name your subquery and reuse it
+
+-- FINAL SUMMARY
+--Topic	                   One Line
+
+--Subquery as source	   subquery = table
+--Multi-column subquery	   compare multiple columns
+--Scalar subquery	       single value in SELECT
+--Correlated subquery	   runs per row
+--WITH clause	           named subquery
+
+
+--practice problems
+
+SELECT *
+FROM (
+     SELECT emp_name, salary
+     FROM xxdn_emp
+     WHERE salary > 5000
+     )
+     temp;
+     
+SELECT *
+FROM xxdn_emp
+WHERE (dept_no,salary) IN (
+      SELECT dept_no, MAX(salary)
+      FROM xxdn_emp
+      GROUP BY dept_no
+      );
+
+SELECT emp_name,
+       salary,
+       (SELECT AVG(salary) FROM xxdn_emp) AS avg_salary
+FROM xxdn_emp;
+
+SELECT emp_name, salary
+FROM xxdn_emp e
+WHERE salary > (
+    SELECT AVG(salary)
+    FROM xxdn_emp
+    WHERE dept_no = e.dept_no
+);
+
+WITH dept_avg AS (
+SELECT dept_no, AVG(salary) AS avg_sal
+FROM xxdn_emp
+GROUP BY dept_no
+)
+SELECT e.emp_name, e.salary
+FROM xxdn_emp e
+JOIN dept_avg d
+ON e.dept_no = d.dept_no
+WHERE e.salary > d.avg_sal;
+
+--USING SUBQUERIES TO MANIPULATE DATA
+-- Defn: Use subqueries inside INSERT / UPDATE / DELETE
+-- Purpose : Perform data changes based on dynamic conditions
+
+--1)UPDATE USING SUBQUERY
+
+--Increase salary based on department average
+
+UPDATE xxdn_emp e
+SET e.salary = e.salary + 1000
+WHERE e.salary < (
+    SELECT AVG(ee.salary)
+    FROM xxdn_emp ee
+    WHERE ee.dept_no = e.dept_no
+);
+--ERROR need to resolve
+
+--Means : Update only employees below dept average
+
+--DELETE USING SUBQUERY
+
+DELETE FROM xxdn_emp
+WHERE salary = (
+    SELECT MIN(salary)
+    FROM xxdn_emp
+);
+
+--Delete employees with lowest salary
+
+
+--INSERT USING SUBQUERY (VERY IMPORTANT)
+-- Defn: Insert data from another query
+--Purpose : Copy/transform data
 
 
 
