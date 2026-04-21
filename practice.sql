@@ -2170,5 +2170,95 @@ WHERE salary = (
 --SELECT SYSTIMESTAMP FROM dual;
 
 
+SELECT dept_no, MAX(salary)
+FROM xxdn_emp
+GROUP BY dept_no
+HAVING MAX(salary)>5000;
+
+--IN
+--dept_no IN (SELECT dept_no FROM dept)
+
+--EXISTS
+--WHERE EXISTS(SELECT 1 FROM dept_d WHERE d.dept_no = e.dept_no)
+
+SELECT dept_no, SUM(salary)
+FROM xxdn_emp
+GROUP BY dept_no;
+
+--Every column in SELECT must be : 
+--     Either aggregated OR included in GROUP BY
+
+SELECT dept_no, SUM(salary) AS sum
+FROM xxdn_emp
+GROUP BY dept_no
+HAVING SUM(salary) > 10000;
 
 
+--Single row subquery
+
+SELECT *
+FROM xxdn_emp
+WHERE salary > (
+      SELECT AVG(salary) FROM xxdn_emp
+      );
+      
+-- compare with =,>,<
+
+--MULTIROW SUBQUERY
+
+--returns multiple values
+
+SELECT *
+FROM xxdn_emp
+WHERE dept_no IN (
+    SELECT dept_no FROM xxdn_dept
+    );
+    
+    --use IN, ANY , ALL
+    
+    
+--Correlated subquery
+
+-- runs once per row of outer query
+
+SELECT *
+FROM xxdn_emp e
+WHERE salary > (
+     SELECT AVG(salary)
+     FROM xxdn_emp
+     WHERE dept_no = e.dept_no
+     );
+     
+--     Meaning:
+--For each employee
+--calculate avg salary of THEIR dept
+--then compare
+--
+--✔ dynamic, row-by-row
+--❌ slower
+
+--SCALER SUBQUERY
+
+--returns exaclty one value +  used in SELECT
+
+SELECT emp_name,
+       (SELECT AVG(salary) FROM xxdn_emp) AS avg_sal
+FROM xxdn_emp;
+
+--acts like a column
+
+
+--INLINE VIEW (SUBQUERY IN FROM)
+
+--acts like a temporary table
+
+SELECT *
+FROM (
+   SELECT dept_no, AVG(salary) avg_sal
+   FROM xxdn_emp
+   GROUP BY dept_no
+   )t
+   WHERE avg_sal > 5000;
+   
+   
+   
