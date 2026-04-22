@@ -2341,7 +2341,7 @@ ON COMMIT DELETE ROWS;
   
   --step 2 - grant access
   
---  GRANT READ, WRITE ON DIRECTORY ext_dir TO 
+  GRANT READ, WRITE ON DIRECTORY ext_dir TO PO;
 
 --Check existing users
 SELECT username FROM all_users;
@@ -2392,4 +2392,45 @@ SELECT CURRENT_TIMESTAMP FROM dual;
  --interval
 SELECT SYSDATE + INTERVAL '5' DAY FROM dual;
 
+--TRY EXTERNAL TABLE
 
+CREATE OR REPLACE DIRECTORY emp_dir
+AS 'D:\emp.csv';
+
+SELECT username FROM all_users;
+
+SELECT * 
+FROM user_sys_privs
+WHERE privilege LIKE '%DIRECTORY%';
+
+SELECT * FROM all_directories;
+
+-- try using one directory
+CREATE TABLE ext_emp (
+  emp_id NUMBER,
+  emp_name VARCHAR2(50)
+)
+ORGANIZATION EXTERNAL
+(
+  TYPE ORACLE_LOADER
+  DEFAULT DIRECTORY EBS_OUTBOUND  -- example from list
+  ACCESS PARAMETERS (
+    RECORDS DELIMITED BY NEWLINE
+    FIELDS TERMINATED BY ','
+  )
+  LOCATION ('emp.csv')
+);
+
+GRANT READ, WRITE ON DIRECTORY EBS_OUTBOUND TO SYS;
+
+--Error starting at line : 2,424 in command -
+--GRANT READ, WRITE ON DIRECTORY EBS_OUTBOUND TO SYS
+--Error report -
+--ORA-01031: insufficient privileges
+--
+--https://docs.oracle.com/error-help/db/ora-01031/01031. 00000 -  "insufficient privileges"
+--*Document: YES
+--*Cause:    A database operation was attempted without the required
+--           privilege(s).
+--*Action:   Ask your database administrator or security administrator to grant
+--           you the required privilege(s).
