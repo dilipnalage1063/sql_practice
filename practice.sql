@@ -2261,4 +2261,135 @@ FROM (
    WHERE avg_sal > 5000;
    
    
+--DATE FUNCTIONS
    
+--SYSDATE
+SELECT SYSDATE FROM dual;
+
+--ADD_MONTHS
+
+SELECT ADD_MONTHS(SYSDATE,3) FROM dual;
+
+--MONTHS_BETWEEN
+
+SELECT MONTHS_BETWEEN(SYSDATE, TO_DATE('2025-04-22','YYYY-MM-DD')) FROM dual;
+
+SELECT MONTHS_BETWEEN(SYSDATE, TO_DATE('01-01-2025','DD-MM-YYYY')) 
+FROM dual;
+
+
+--NEXT_DAY
+
+SELECT NEXT_DAY(SYSDATE,'SUNDAY') FROM dual;
+
+--LAST_DAY
+
+SELECT LAST_DAY(SYSDATE) FROM dual;
+
+----VIEWS
+    -- CREATE
+CREATE VIEW emp_v AS
+SELECT emp_name FROM xxdn_emp;
+
+    --REPLACE
+CREATE OR REPLACE VIEW emp_v AS
+SELECT emp_name, emp_id FROM xxdn_emp;
+
+    --USE
+SELECT * FROM emp_v;
+
+
+--INDEX
+
+CREATE INDEX emp_idx2
+ON xxdn_emp(salary);
+
+-- DATA DICTIONARY
+
+--Tables List
+SELECT table_name FROM user_tables;
+
+--Columns
+SELECT column_name FROM user_tab_columns
+WHERE table_name = 'XXDN_EMP';
+
+--CONSTRAINTS
+SELECT * FROM user_constraints;
+
+--SYNONYMS
+
+CREATE SYNONYM e1 FOR xxdn_emp;
+
+--TEMPORARY TABLE
+
+CREATE GLOBAL TEMPORARY TABLE temp_emp(
+   salary NUMBER
+)
+ON COMMIT DELETE ROWS;
+
+--EXTERNAL TABLE
+  --cannot just run
+  GRANT CREATE ANY DIRECTORY TO test_user;
+  GRANT CREATE USER TO test_user;
+  CREATE USER test_user IDENTIFIED BY test123;
+  
+  --step 1 - create directory
+  
+  
+  CREATE OR REPLACE DIRECTORY ext_dir AS 'D:\SQL\emp.csv';
+  
+  
+  --step 2 - grant access
+  
+--  GRANT READ, WRITE ON DIRECTORY ext_dir TO 
+
+--Check existing users
+SELECT username FROM all_users;
+
+SELECT * FROM ext_table;
+
+--FLASHBACK
+
+SELECT *
+FROM xxdn_emp
+AS OF TIMESTAMP (SYSTIMESTAMP - INTERVAL '5' MINUTE);
+
+--TRACKING CHANGES
+
+   --COLUMN
+   ALTER TABLE xxdn_emp ADD last_updated TIMESTAMP;
+   
+   --TRIGGER
+--   :NEW.last_updated := SYSTIMESTAMP;
+
+--SEQUENCE
+
+CREATE SEQUENCE emp_seqnce;
+--INSERT INTO xxdn_emp VALUES (emp_seqnce.NEXTVAL,...);
+
+--CONSTRAINT MANAGEMENT
+
+ALTER TABLE xxdn_emp ADD CONSTRAINT pk PRIMARY KEY (emp_id);
+
+ALTER TABLE xxdn_emp DROP CONSTRAINT pk;
+
+--USER ACCESS
+
+--GRANT
+GRANT SELECT ON xxdn_emp TO user1;
+
+--ROLE 
+CREATE ROLE r1;
+GRANT SELECT TO r1;
+
+--REVOKE
+REVOKE SELECT ON xxdn_emp FROM user1;
+
+--TIME ZONE FUNCTIONS
+ --current time
+SELECT CURRENT_TIMESTAMP FROM dual;
+
+ --interval
+SELECT SYSDATE + INTERVAL '5' DAY FROM dual;
+
+
