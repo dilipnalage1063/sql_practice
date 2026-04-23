@@ -1,0 +1,38 @@
+SQL Evaluation Questions, Date: 23-Apr-2026 
+Duration: 120 minutes | Total Marks: 35
+
+Q1. Display employee name with row number per department using analytical function.
+Q2. Find employees who earn more than their manager.
+Q3. Find departments having more than 3 employees using GROUP BY and HAVING.
+Q4. Find the second highest salary without using ROWNUM or FETCH.
+Q5. Find departments where average salary is greater than company average salary.
+Q6. List employees who do not belong to any department.
+Q7. Find departments that do not have any employees.
+Q8. Display employee name, department name, and location, even if some data is missing.
+Q9. Find employees who joined before their manager.
+Q10. Get department-wise highest and lowest salary in the same row.
+Q11. Use correlated subquery + CASE to mark employees as Above Avg or Below Avg.
+Q12. Find employees who are not managers.
+Q13. Find duplicate employees based on name and department.
+Q14. Delete duplicate records keeping only one.
+Q15. Find employees who have the same salary as someone else.
+Q16. Use SUBSTR to display first 3 characters of employee name.
+Q17. Use INSTR to find position of 'A' in employee name.
+Q18. Use NVL2 to display 'Has Commission' or 'No Commission' based on commission column.
+Q19. Use GROUP BY and HAVING to find departments with total salary greater than 10000.
+Q20. Convert a string date '2024-01-15' to DATE using TO_DATE and display it.
+Q21. Use CASE to categorize salary into High, Medium, Low.
+Q22. Rewrite salary categorization using DECODE.
+Q23. Use FLOOR and CEIL to round salary values.
+Q24. Find employees whose salary is exact multiple of 1000 using FLOOR/CEIL.
+Q25. Find minimum, maximum, and average salary department-wise using MIN, MAX, AVG.
+Q26. Write MERGE query to update salary if exists else insert.
+Q27. Insert top 5 highest salary employees into another table.
+Q28. Update salary based on department average.
+Q29. Delete employees not assigned to any department.
+Q30. Explain rollback of last update (conceptual).
+Q31. Convert hire_date to 'DD-MON-YYYY' format using TO_CHAR.
+Q32. Write query using WITH clause (CTE).
+Q33. Explain WHERE vs HAVING with example.
+Q34. Explain NOT IN with NULL behavior.
+Q35. Find employees whose name is palindrome.
